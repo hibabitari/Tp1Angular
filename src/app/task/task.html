@@ -1,6 +1,6 @@
 <!-- 1. Interpolation : TS -> vue -->
 <h2>{{ title }}</h2>
-<p>Nombre de tâches : {{ tasks.length }}</p>
+<p>Nombre de tâches : {{ count() }}</p>
 
 <!-- 2. Property binding : TS -> vue / 3. Event binding : vue -> TS -->
 <input
@@ -15,14 +15,16 @@
   Ajouter
 </button>
 
+<button [disabled]="count() === 0" (click)="clearAll()">
+  Tout vider
+</button>
+
 <ul>
-  @for (task of tasks; track task.id) {
+  @for (task of tasks(); track task.id) {
     <li>
       {{ task.name }}
       <button (click)="rename($index)">Renommer</button>
-      <button [disabled]="!canDelete" (click)="deleteTask($index)">
-        Supprimer
-      </button>
+      <button (click)="deleteTask($index)">Supprimer</button>
     </li>
   } @empty {
     <p>Aucune tâche pour le moment. Profitez de votre journée !</p>

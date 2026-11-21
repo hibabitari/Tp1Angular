@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 
 interface TaskItem {
   id: number;
@@ -14,12 +14,14 @@ export class Task {
   title = 'Ma liste de tâches';
   placeholderText = 'Saisir une tâche...';
   newTask = '';
-  
-  // Tableau d'objets pour utiliser track task.id
-  tasks: TaskItem[] = [];
-  private taskIdCounter = 1;
 
-  canDelete = false;
+  // signal(v) : créer le signal
+  tasks = signal<TaskItem[]>([]);
+
+  // tasks() : lire le signal pour calculer le compteur
+  count = computed(() => this.tasks().length);
+
+  private taskIdCounter = 1;
 
   onInput(event: Event) {
     this.newTask = (event.target as HTMLInputElement).value;
@@ -28,26 +30,37 @@ export class Task {
   addTask() {
     const value = this.newTask.trim();
     if (value) {
-      // Ajout avec un id unique
-      this.tasks.push({ id: this.taskIdCounter++, name: value });
+      const newItem: TaskItem = {
+        id: this.taskIdCounter++,
+        name: value,
+      };
+
+      // update(fn) : créer un nouveau tableau sans mutation (évite tasks().push(t))
+      this.tasks.update((items) => [...items, newItem]);
       this.newTask = '';
     }
   }
 
   rename(index: number) {
-    const newName = prompt('Nouveau nom :', this.tasks[index].name);
+    const currentTasks = this.tasks();
+    const target = currentTasks[index];
+    if (!target) return;
+
+    const newName = prompt('Nouveau nom :', target.name);
     if (newName && newName.trim()) {
-      this.tasks[index].name = newName.trim();
-      this.canDelete = true;
+      const trimmed = newName.trim();
+      this.tasks.update((items) =>
+        items.map((item, i) => (i === index ? { ...item, name: trimmed } : item))
+      );
     }
   }
 
   deleteTask(index: number) {
-    if (this.canDelete) {
-      this.tasks.splice(index, 1);
-      this.canDelete = false;
-    }
+    this.tasks.update((items) => items.filter((_, i) => i !== index));
+  }
+
+  // set(v) : remplacer complètement la valeur du signal
+  clearAll() {
+    this.tasks.set([]);
   }
 }
-
-//il faut importer le composant Pipe ici et pas dans le fichier app.ts.
